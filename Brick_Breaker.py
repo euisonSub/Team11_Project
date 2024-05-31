@@ -1,13 +1,14 @@
 import pygame
 import sys
 import itertools
+import json
 
 # 초기화
 pygame.init()
 
 # 화면 설정
 screen = pygame.display.set_mode((800, 600))
-pygame.display.setCaption("Brick Breaker")
+pygame.display.set_caption("Brick Breaker")
 
 # 색상 정의
 WHITE = (255, 255, 255)
@@ -79,6 +80,26 @@ def show_pause_screen():
     draw_text('Press P to resume', instruction_font, next(color_cycle), screen, 400, 400)
     pygame.display.flip()
 
+def reset_game():
+    global paddle, ball, ball_dx, ball_dy, bricks, brick_colors, lives, score, current_stage, paused
+    paddle = pygame.Rect(375, 550, 50, 10)
+    ball = pygame.Rect(390, 540, 10, 10)
+    ball_dx = 3
+    ball_dy = -3
+    speed_increase_factor = 1.2  # 속도 증가 비율
+    stages = [5, 6, 7]  # 각 단계의 벽돌 행 수
+    current_stage = 0
+    bricks = create_bricks(stages[current_stage])
+    brick_colors = [WHITE] * len(bricks)
+    for i in range(0, len(bricks), 10):
+        if i < len(bricks):
+            brick_colors[i] = RED
+        if i + 5 < len(bricks):
+            brick_colors[i + 5] = BLUE
+    lives = 3
+    score = 0  # 점수 설정
+    paused = False
+
 # 패들 설정
 paddle = pygame.Rect(375, 550, 50, 10)
 
@@ -129,6 +150,8 @@ while running:
                 paused = not paused
                 if paused:
                     show_pause_screen()
+            elif not paused and event.key == pygame.K_ESCAPE:
+                running = False
 
     if not paused:
         # 패들 이동
@@ -178,13 +201,16 @@ while running:
                 ball_dy = -abs(ball_dy * speed_increase_factor)
             else:
                 show_game_over_screen()
-                running = False
+                reset_game()
+                show_start_screen()
 
         # 공이 바닥에 닿았을 때 처리
         if ball.top >= 600:
             lives -= 1
             if lives == 0:
-                running = False
+                show_game_over_screen()
+                reset_game()
+                show_start_screen()
             else:
                 ball.left, ball.top = 390, 540
                 ball_dx, ball_dy = 3 * (speed_increase_factor ** current_stage), -3 * (speed_increase_factor ** current_stage)
@@ -202,9 +228,6 @@ while running:
 
         # 프레임 속도 조절
         pygame.time.delay(30)
-
-# 종료 화면 표시
-show_game_over_screen()
 
 # 게임 종료 처리
 pygame.quit()
