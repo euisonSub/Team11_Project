@@ -1,13 +1,14 @@
 import pygame
 import sys
 import itertools
+import json
 
 # 초기화
 pygame.init()
 
 # 화면 설정
 screen = pygame.display.set_mode((800, 600))
-pygame.display.setCaption("Brick Breaker")
+pygame.display.set_caption("Brick Breaker")
 
 # 색상 정의
 WHITE = (255, 255, 255)
@@ -54,9 +55,20 @@ def show_start_screen():
         pygame.time.delay(500)
 
 def show_game_over_screen():
+    global score
     screen.fill(RED)
     draw_text('Game Over', title_font, next(color_cycle), screen, 400, 200)
-    draw_text('Press any key to restart', instruction_font, next(color_cycle), screen, 400, 400)
+
+    # Save the score
+    save_score(score)
+
+    # Display top scores
+    top_scores = get_top_scores()
+    y_offset = 450
+    draw_text('Top Scores:', instruction_font, next(color_cycle), screen, 400, y_offset)
+    for i, (name, score) in enumerate(top_scores):
+        draw_text(f'{i + 1}. {name} - {score}', instruction_font, next(color_cycle), screen, 400, y_offset + (i + 1) * 30)
+
     pygame.display.flip()
     pygame.time.delay(500)
     waiting = True
@@ -69,7 +81,10 @@ def show_game_over_screen():
                 waiting = False
         screen.fill(RED)
         draw_text('Game Over', title_font, next(color_cycle), screen, 400, 200)
-        draw_text('Press any key to restart', instruction_font, next(color_cycle), screen, 400, 400)
+        y_offset = 450
+        draw_text('Top Scores:', instruction_font, next(color_cycle), screen, 400, y_offset)
+        for i, (name, score) in enumerate(top_scores):
+            draw_text(f'{i + 1}. {name} - {score}', instruction_font, next(color_cycle), screen, 400, y_offset + (i + 1) * 30)
         pygame.display.flip()
         pygame.time.delay(500)
 
@@ -78,6 +93,29 @@ def show_pause_screen():
     draw_text('Paused', title_font, next(color_cycle), screen, 400, 200)
     draw_text('Press P to resume', instruction_font, next(color_cycle), screen, 400, 400)
     pygame.display.flip()
+
+def save_score(score):
+    name = "Player"  # You can modify this to get player's name dynamically
+    try:
+        with open("scores.json", "r") as file:
+            scores = json.load(file)
+    except FileNotFoundError:
+        scores = []
+
+    scores.append({"name": name, "score": score})
+
+    scores = sorted(scores, key=lambda x: x["score"], reverse=True)[:5]
+
+    with open("scores.json", "w") as file:
+        json.dump(scores, file)
+
+def get_top_scores():
+    try:
+        with open("scores.json", "r") as file:
+            scores = json.load(file)
+            return [(entry["name"], entry["score"]) for entry in scores]
+    except FileNotFoundError:
+        return []
 
 # 패들 설정
 paddle = pygame.Rect(375, 550, 50, 10)
